@@ -1,0 +1,13 @@
+body {
+  padding: 10px;
+}
+
+div.item_label {
+  background-color: #33ca25;
+  border: solid bottom-border black;
+}
+
+div.item_value {
+  background-color: #d6f4f1;
+  border-style: solid bottom-border black;
+}
