@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from .models import User, Category, Auctions, Bid, Comments, Watchlist
-from .utils import auctionExist
+from .utils import maxBid
 
 
 def index(request):
@@ -79,7 +79,7 @@ def auctions_add(request):
             description=request.POST["description"],
             start_bid=request.POST["start_bid"],
             image_url=request.POST["image_url"],
-            active=request.POST["active"]
+            active=True
         )
         auction.save()
         print("Saved Auction: ", auction.id_auction)
@@ -93,15 +93,22 @@ def auctions_add(request):
 
 def auctions_item(request, id_auction):
 
-    # Check if the auction exist.
+    # It can be a redirect, so check if a alert message needs to be presented.
+    try:
+        alert_message = request.session["alert_message"]
+        # Clear the session variable
+        del request.session["alert_message"]
+    except:
+        alert_message = ""
+
+    # check if id_auction exists
     try:
         auction = Auctions.objects.get(id_auction=id_auction)
-        error_message = ""
+
     except Auctions.DoesNotExist:
-        # If not display an error message
-        error_message = "This Auction Does Not Exist!"
+        # id_auction doesn't exist, display an error message
         return render(request, "auctions/auctionsItem.html", {
-            "error_message": error_message
+            "error_message": "This Auction Does Not Exist!"
         })
 
     # Here just because I can´t get the user id from the auction object.
@@ -125,32 +132,57 @@ def auctions_item(request, id_auction):
         "user": auction.id_user,
         "category": auction.id_category,
         "watchlist": watchlist,
-        "auction_owner": owner
+        "auction_owner": owner,
+        "alert_message": alert_message
     })
 
 
-def auctions_close(request, id_auction):
-    auction = Auctions.objects.get(id_auction=id_auction)
+def auctions_bid(request):
 
-    # TO DO
+    if request.method == "POST":
 
-    # return render(request, "auctions/auctionsItem.html", {
-    #    "auction": auction,
-    #    "user": auction.id_user,
-    #    "category": auction.id_category
-    # })
+        id_auction = request.POST["id_auction"]
+        # return the higher bid for the auction.
+        max_bid = maxBid(request.POST["id_auction"])
+        amount = float(request.POST["amount"])
+        start_bid = Auctions.objects.get(id_auction=id_auction).start_bid
 
+        print(f"start bid: {start_bid}, max bid: {max_bid}")
+        # Bid placed is higher than highest bid and higher than Auction's start bid
+        if amount > max_bid and amount > start_bid:
+            try:
+                print(f"{request.user.id}, {id_auction}, {amount}")
+                bid = Bid(
+                    id_user=request.user,
+                    id_auction=Auctions.objects.get(id_auction=id_auction),
+                    amount=amount,
+                    active=True
+                )
+                print(bid)
+                bid.save()
+                print("Saved bid: ", bid.id_bid)
 
-def auctions_bid(request, id_auction):
-    auction = Auctions.objects.get(id_auction=id_auction)
+                request.session['alert_message'] = f"Bid placed. Amount {amount} from user {request.user.username}."
+            except:
+                # Failed to save the new Bid
+                request.session['alert_message'] = f"Bid Rejected. Save bid failed."
+        else:
+            if amount < start_bid:
+                # Bid placed was lower than the start bid
+                request.session[
+                    'alert_message'] = f"Bid Rejected. Amount lower than the start bid amount. { start_bid }."
+            else:
+                # Bid placed was lower than the higher one
+                request.session[
+                    'alert_message'] = f"Bid Rejected. Amount lower than the higher { max_bid}."
 
-    # TO DO
+        return HttpResponseRedirect(reverse("auctions_item",
+                                            args=[id_auction]))
 
-    # return render(request, "auctions/auctionsItem.html", {
-    #    "auction": auction,
-    #    "user": auction.id_user,
-    #    "category": auction.id_category
-    # })
+    else:
+        # Http get redisplay the page again.
+        return HttpResponseRedirect(reverse("auctions_item",
+                                            args=[id_auction]))
 
 
 def auctions_oper(request, oper, id_auction):
@@ -160,6 +192,7 @@ def auctions_oper(request, oper, id_auction):
     # Check if the auction exist.
     try:
         auction = Auctions.objects.get(id_auction=id_auction)
+        request.session['alert_message'] = ""
 
         if oper == "Add":
 
@@ -170,13 +203,13 @@ def auctions_oper(request, oper, id_auction):
 
             try:
                 watchlist.save()
-                alert_message = "Item added to the watchlist."
+                request.session['alert_message'] = "Item added to the watchlist."
 
             except:
                 # Auction not saved
                 print(
                     f"Log -> Error adding watchlist: {id_auction} and user:{request.user.id}")
-                alert_message = "Watch list item duplicated."
+                request.session['alert_message'] = "Watch list item duplicated."
 
         elif oper == "Delete":
 
@@ -187,20 +220,36 @@ def auctions_oper(request, oper, id_auction):
 
             try:
                 watchlist.delete()
-                alert_message = "Item removed from the watchlist."
+                request.session['alert_message'] = "Item removed from the watchlist."
 
             except:
                 # Auction not saved
                 print(
                     f"Log -> Error deleting watchlist auction:{id_auction} and user:{request.user.id}")
-                alert_message = "Watch list entry doesn't exist."
+                request.session['alert_message'] = "Watchlist entry doesn't exist."
+
+        elif oper == "Close":
+
+            auction = Auctions.objects.get(
+                id_auction=id_auction,
+                id_user=request.user.id
+            )
+            try:
+                auction.active = False
+                auction.save()
+                request.session['alert_message'] = "Auction was closed."
+            except:
+                # Auction not closed
+                print(
+                    f"Log -> Error closing the  auction:{id_auction} from user:{request.user.id},")
+                request.session['alert_message'] = "Auction can't be closed. You must be the auction´s owner."
 
         return HttpResponseRedirect(reverse("auctions_item",
                                             args=[id_auction]))
 
     except Auctions.DoesNotExist:
         # If not display an error message
-        message = "This Auction Does Not Exist. Operation Cancelled."
+        error_message = "This Auction Does Not Exist. Operation Cancelled."
         return render(request, "auctions/auctionsItem.html", {
-            "message": message
+            "error_message": error_message
         })

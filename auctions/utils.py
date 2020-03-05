@@ -1,12 +1,15 @@
-from .models import Auctions
+from .models import Bid
 
 
-def auctionExist(id_auction):
+"""
+    Function returns the higher bid from an auction.
+    In case there are no bid returns 0
+"""
 
-    # Check if the auction exist.
-    try:
-        auction = Auctions.objects.get(id_auction=id_auction)
-        return auction
-    except Auctions.DoesNotExist:
-        # If not display an error message
-        return False
+
+def maxBid(id_auction):
+   # try:
+    max = Bid.objects.filter(id_auction=id_auction)
+    return max.aggregate(Max('amount'))
+   # except e:
+    return 0

@@ -30,8 +30,8 @@ class Auctions(models.Model):
     date_creation = models.DateTimeField(auto_now=True)
     active = models.BooleanField("Active", default="True")
 
-    # def __str__(self):
-    #    return f"id={self.id_auction}, Title={self.title}, User={self.id_user}"
+    def __str__(self):
+        return f"id = {self.id_auction}, Title = {self.title}, User = {self.id_user}, Start bid = {self.start_bid}, Active = {self.active}"
 
 
 class Bid(models.Model):
@@ -44,8 +44,11 @@ class Bid(models.Model):
     )
     id_auction = models.ForeignKey(
         Auctions, to_field='id_auction', on_delete=models.PROTECT, db_column='id_auction')
-    Amount = models.FloatField("Amount")
+    amount = models.FloatField("Amount")
     active = models.BooleanField("Active", default="True")
+
+    def __str__(self):
+        return f"id bid = {self.id_bid}, id user = {self.id_user}, id_auction = {self.id_auction}, Amount = {self.amount}, Active = {self.active}"
 
 
 class Comments(models.Model):

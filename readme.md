@@ -4,11 +4,12 @@ senha : apelido
 
 Pendencias
 
-- Watchlist Add and remove / Create the Watchlist model.
 - Place a Bid and check if higher than other bids.
+
+- Watchlist Add and remove / Create the Watchlist model.
 - Add a comment
 - List comments
-- Close auction
+
 - Select box for the category.
 - Active checkbox implemented.
 - Watchlist page

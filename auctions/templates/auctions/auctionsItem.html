@@ -1,12 +1,12 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    {% if message %}
-        <div><h1>{{ message }}</h1></div>
+    {% if error_message %}
+        <div><h1>{{ error_message }}</h1></div>
     {% else %}
         <h5>{{ auction.title }} - id.{{ auction.id_auction }} </h5>
         {% if alert_message %}
-            <h5 style="bg-alert">{{ alert_message }}</h5>        
+            <div style="text-align: center"><h5 style="bg-alert">{{ alert_message }}</h5></div>        
         {% endif %}
         <div class="container-fluid">
             <div class="row">
@@ -36,37 +36,37 @@
             <div class="row">
                 <div class="col-3">
                     <form action="{% url 'auctions_bid' %}" method="POST">
+                            {% csrf_token %}
                             <label for="amount">Amount: </label>
-                            <input type="text" id="amount" name="amount">
-                            <input type="hidden" id="id_auction" name="id_auction" value="{{ id_auction }}">
+                            <input type="text" id="amount" pattern="([0-9]*\.[0-9]+|[0-9]+)" size="10" name="amount">
+                            <input type="hidden" id="id_auction" name="id_auction" value="{{ auction.id_auction }}">
                             <input type="submit" value="Bid">
                         </form>            
                 </div>
                 <div class="col-9"><p></p></div>            
             </div>    
         </div>
-
         <hr>   
         <div>
-            {% if user.is_authenticated %}
+            {% if user.is_authenticated and auction.id_auction %}
                 <ul class="nav">
                     {% if not watchlist %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'auctions_watchlist' "Add" auction.id_auction %}">
+                            <a class="nav-link" href="{% url 'auctions_oper' "Add" auction.id_auction %}">
                                 <input type="submit" style="background-color:Green;" value="Add to watchlist">
                             </a>
                         </li>
                     {% else %}                    
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'auctions_watchlist' "Delete" auction.id_auction %}">
+                            <a class="nav-link" href="{% url 'auctions_oper' "Delete" auction.id_auction %}">
                                 <input type="submit" style="background-color:Red; color:white;" value="Remove from watchlist">
                             </a>
                         </li>
                     {% endif %}
 
-                    {% if auction_owner %}
+                    {% if auction_owner and auction.active %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'auctions_watchlist' "Close" auction.id_auction %}">
+                            <a class="nav-link" href="{% url 'auctions_oper' "Close" auction.id_auction %}">
                                 <input type="submit" style="background-color:Red; color:white;" value="Close Auction">
                             </a>
                         </li>
