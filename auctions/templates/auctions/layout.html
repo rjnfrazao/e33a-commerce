@@ -20,6 +20,9 @@
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'index' %}">Active Listings</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'index' %}?q=closed">Closed Listings</a>
+            </li>            
             {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'auctions_add' %}">New Auction</a>
@@ -39,5 +42,8 @@
         <hr>
         {% block body %}
         {% endblock %}
+        {% block comment %}
+        {% endblock %}     
+
     </body>
 </html>

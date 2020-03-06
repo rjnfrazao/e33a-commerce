@@ -9,9 +9,17 @@ from .utils import maxBid
 
 
 def index(request):
-    auctions = Auctions.objects.filter(active=True)
+
+    if request.GET.get("q") != "closed":
+        auctions = Auctions.objects.filter(active=True)
+        status = "Active"
+    else:
+        auctions = Auctions.objects.filter(active=False)
+        status = "Closed"
+
     return render(request, "auctions/index.html", {
-        "auctions": auctions
+        "auctions": auctions,
+        "status": status
     })
 
 
@@ -102,9 +110,14 @@ def auctions_item(request, id_auction):
         alert_message = ""
 
     # check if id_auction exists
+
     try:
         auction = Auctions.objects.get(id_auction=id_auction)
 
+        try:
+            comments = Comments.objects.filter(id_auction=id_auction)
+        except:
+            comments = None
     except Auctions.DoesNotExist:
         # id_auction doesn't exist, display an error message
         return render(request, "auctions/auctionsItem.html", {
@@ -118,17 +131,22 @@ def auctions_item(request, id_auction):
     try:
         Watchlist.objects.get(id_auction=id_auction, id_user=request.user)
         watchlist = True
-    except Watchlist.DoesNotExist:
+    except:
         watchlist = False
 
     # Check if the auction's user is the one which created the auction
-    if auctionUser.id == request.user.id:
-        owner = True
-    else:
+    try:
+        if auctionUser.id == request.user.id:
+            owner = True
+        else:
+            owner = False
+    except:
+        # user is not logged.
         owner = False
 
     return render(request, "auctions/auctionsItem.html", {
         "auction": auction,
+        "comments": comments,
         "user": auction.id_user,
         "category": auction.id_category,
         "watchlist": watchlist,
@@ -143,7 +161,7 @@ def auctions_bid(request):
 
         id_auction = request.POST["id_auction"]
         # return the higher bid for the auction.
-        max_bid = maxBid(request.POST["id_auction"])
+        max_bid = maxBid(id_auction)
         amount = float(request.POST["amount"])
         start_bid = Auctions.objects.get(id_auction=id_auction).start_bid
 
@@ -162,7 +180,7 @@ def auctions_bid(request):
                 bid.save()
                 print("Saved bid: ", bid.id_bid)
 
-                request.session['alert_message'] = f"Bid placed. Amount {amount} from user {request.user.username}."
+                request.session['alert_message'] = f"Bid placed. Amount {amount} by user {request.user.username}."
             except:
                 # Failed to save the new Bid
                 request.session['alert_message'] = f"Bid Rejected. Save bid failed."
@@ -170,11 +188,11 @@ def auctions_bid(request):
             if amount < start_bid:
                 # Bid placed was lower than the start bid
                 request.session[
-                    'alert_message'] = f"Bid Rejected. Amount lower than the start bid amount. { start_bid }."
+                    'alert_message'] = f"Bid Rejected. The bid of {amount} is lower than the initial bid of { start_bid }."
             else:
                 # Bid placed was lower than the higher one
                 request.session[
-                    'alert_message'] = f"Bid Rejected. Amount lower than the higher { max_bid}."
+                    'alert_message'] = f"Bid Rejected. The bid of {amount} is lower than the higher one { max_bid}."
 
         return HttpResponseRedirect(reverse("auctions_item",
                                             args=[id_auction]))
@@ -253,3 +271,19 @@ def auctions_oper(request, oper, id_auction):
         return render(request, "auctions/auctionsItem.html", {
             "error_message": error_message
         })
+
+
+def auctions_comment(request):
+
+    if request.method == "POST":
+
+        id_auction = request.POST["id_auction"]
+        comment = Comments(
+            id_user=request.user,
+            id_auction=Auctions.objects.get(id_auction=id_auction),
+            comment=request.POST["comment"]
+        )
+        comment.save()
+
+        return HttpResponseRedirect(reverse("auctions_item",
+                                            args=[id_auction]))

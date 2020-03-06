@@ -2,19 +2,28 @@
 
 senha : apelido
 
-Pendencias
+### Done
 
-- Place a Bid and check if higher than other bids.
+- Django Admin Interface on Mon.
+- Place a Bid and check if higher than other bids on Wed.
+- Watchlist Add and remove / Create the Watchlist model on Tue.
+- List comments on Thur
+- Add a comment on Thur
+- List of closed auctions on Thur
+- Bug: Not able to create decimal amount for the bid. on Thur
 
-- Watchlist Add and remove / Create the Watchlist model.
-- Add a comment
-- List comments
+### Pending
 
 - Select box for the category.
-- Active checkbox implemented.
 - Watchlist page
-- Categories list -> access all auctions from the category selected.
-- Django Admin Interface.
-- Descobrir por que na view que lista a auction, o user id aparece o nome.
-- Na página Auction Item : A categoria objeto é mostrado ao invés do nome da categoria.
-- Not able to create decimal amount for the bid.
+- Categories list \*> access all auctions from the category selected.
+- page should inform when the user is the winner, list of closed auctions.
+- Improve look and feel
+
+### Bugs
+
+- When opened two browser, the session of the loged user appears at the browser where the user is not logged. Open page Auction Item (or detail) the user name is displayed.
+  ao abrir o detalhe do auction, o usuário do outro browser aparece logado.
+- Find out why the auction all object displays the username at the field I expected id user. Lack of knowledge on a Django concept.
+- Auction Item page : Category code displayed instead of catgory name.
+- Can´t display two lines for the auction´s description. Bootstrap issue or wrong html attribute?

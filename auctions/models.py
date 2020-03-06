@@ -45,6 +45,7 @@ class Bid(models.Model):
     id_auction = models.ForeignKey(
         Auctions, to_field='id_auction', on_delete=models.PROTECT, db_column='id_auction')
     amount = models.FloatField("Amount")
+    date_creation = models.DateTimeField(auto_now=True)
     active = models.BooleanField("Active", default="True")
 
     def __str__(self):
@@ -62,6 +63,7 @@ class Comments(models.Model):
         db_column='id_user'
     )
     comment = models.CharField("Comment", max_length=255)
+    date_creation = models.DateTimeField(auto_now=True)
 
 
 class Watchlist(models.Model):
