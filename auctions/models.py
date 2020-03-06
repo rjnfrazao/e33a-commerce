@@ -46,6 +46,7 @@ class Bid(models.Model):
         Auctions, to_field='id_auction', on_delete=models.PROTECT, db_column='id_auction')
     amount = models.FloatField("Amount")
     date_creation = models.DateTimeField(auto_now=True)
+    # To be used in future case user wanted to cancel the BID.
     active = models.BooleanField("Active", default="True")
 
     def __str__(self):

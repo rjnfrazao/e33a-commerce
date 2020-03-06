@@ -5,21 +5,53 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from .models import User, Category, Auctions, Bid, Comments, Watchlist
-from .utils import maxBid
+from .utils import maxBid, IsWatchlist, isWinner
+
+"""
+Page displays the auctions listing, it displays three different conditions : Closed only, Active Only,
+and Filtered by a category
+
+The following parameters apply:
+q=Closed : Display closed auctions.
+c=<id_category> : Display the list of auctions which belongs to the informed category.
+Otherwise : Display active auctions.
+"""
 
 
 def index(request):
 
     if request.GET.get("q") != "closed":
-        auctions = Auctions.objects.filter(active=True)
-        status = "Active"
+        # Closed auctions wasn't requested, so keep working on active only.
+
+        if request.method == 'GET' and 'c' in request.GET:
+            # Category was informed so filter the auctions per category.
+            auctions = Auctions.objects.filter(
+                id_category=request.GET.get("c"), active=True)
+            try:
+                print(request.GET.get("c"))
+                category = Category.objects.get(
+                    id_category=request.GET.get("c"))
+                status = f"Category {category.name} "
+            except:
+                status = ""
+                alert_message = "Category does not exist"
+        else:
+            # Category wasn´t informed so display active list
+            auctions = Auctions.objects.filter(active=True)
+            status = "Active"
     else:
+        # Closed auctions only.
         auctions = Auctions.objects.filter(active=False)
         status = "Closed"
 
+    alert_message = ""
+    if len(auctions) == 0:
+        alert_message = "There no items in the watchlist."
+
     return render(request, "auctions/index.html", {
         "auctions": auctions,
-        "status": status
+        "status": status,
+        "alert_message": alert_message
     })
 
 
@@ -75,6 +107,13 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
+"""
+Page to register auctions.
+
+
+"""
+
+
 def auctions_add(request):
 
     if request.method == "POST":
@@ -99,7 +138,18 @@ def auctions_add(request):
         })
 
 
+"""
+Page displays the auction item.
+
+There are some redirects to this page, as this page displays the details of the auction.
+
+"""
+
+
 def auctions_item(request, id_auction):
+
+    # Initialize local variables.
+    winner = False
 
     # It can be a redirect, so check if a alert message needs to be presented.
     try:
@@ -110,14 +160,40 @@ def auctions_item(request, id_auction):
         alert_message = ""
 
     # check if id_auction exists
-
     try:
         auction = Auctions.objects.get(id_auction=id_auction)
 
+        # Retrieve category name
+        #cat = Category.objects.get(id_category=auction.id_category)
+        #category_name = cat.name
+
         try:
+            # Retrieve all comments from the auction.
             comments = Comments.objects.filter(id_auction=id_auction)
         except:
+            # In case there are no comments keep it clear.
             comments = None
+
+        try:
+            # Get the higher bid for the auction.
+            max_bid = maxBid(id_auction)
+
+            if max_bid == 0:
+                higher_bid_message = "<< NO BIDS YET >>"            # There are no bids yet
+            else:
+                # Higher bid was found.
+                higher_bid_message = f" - Higher bid is {max_bid}"
+
+            if not auction.active:
+                # Check if current user is the winner of the bid
+                if isWinner(id_auction, request.user):
+                    alert_message = alert_message + \
+                        "Congratulations. You are the WINNER of this bid."
+                    winner = True
+        except:
+            # In case there are no comments keep it clear.
+            winner = False
+
     except Auctions.DoesNotExist:
         # id_auction doesn't exist, display an error message
         return render(request, "auctions/auctionsItem.html", {
@@ -144,6 +220,7 @@ def auctions_item(request, id_auction):
         # user is not logged.
         owner = False
 
+    # return the page
     return render(request, "auctions/auctionsItem.html", {
         "auction": auction,
         "comments": comments,
@@ -151,7 +228,9 @@ def auctions_item(request, id_auction):
         "category": auction.id_category,
         "watchlist": watchlist,
         "auction_owner": owner,
-        "alert_message": alert_message
+        "alert_message": alert_message,
+        "higher_bid_message": higher_bid_message,
+        "isTheWinner": winner
     })
 
 
@@ -162,6 +241,8 @@ def auctions_bid(request):
         id_auction = request.POST["id_auction"]
         # return the higher bid for the auction.
         max_bid = maxBid(id_auction)
+        if max_bid is None:
+            max_bid = 0
         amount = float(request.POST["amount"])
         start_bid = Auctions.objects.get(id_auction=id_auction).start_bid
 
@@ -176,9 +257,7 @@ def auctions_bid(request):
                     amount=amount,
                     active=True
                 )
-                print(bid)
                 bid.save()
-                print("Saved bid: ", bid.id_bid)
 
                 request.session['alert_message'] = f"Bid placed. Amount {amount} by user {request.user.username}."
             except:
@@ -201,6 +280,12 @@ def auctions_bid(request):
         # Http get redisplay the page again.
         return HttpResponseRedirect(reverse("auctions_item",
                                             args=[id_auction]))
+
+
+"""
+Perform 3 operations. Add watchlist, Delete watchlist, Close Auction
+
+"""
 
 
 def auctions_oper(request, oper, id_auction):
@@ -287,3 +372,56 @@ def auctions_comment(request):
 
         return HttpResponseRedirect(reverse("auctions_item",
                                             args=[id_auction]))
+
+
+def watchlist(request):
+
+    class Watch:
+        id_auction = 0
+        title = ""
+        start_bid = 0
+        higher_bid = 0
+
+        def __init__(self, id_auction, title, start, higher):
+            # Instance Variable
+            self.id_auction = id_auction
+            self.title = title
+            self.start_bid = start
+            self.higher = higher
+
+    auctions = Auctions.objects.filter(active=True)
+    id_user = request.user.id
+
+    watch = []
+    for auction in auctions:
+
+        if IsWatchlist(auction.id_auction, id_user):
+            #print("id_auction:", auction.id_auction)
+            maxbid = maxBid(auction.id_auction)
+            w = Watch(int(auction.id_auction), auction.title,
+                      auction.start_bid,
+                      maxbid)
+            watch.append(w)
+
+    alert_message = ""
+    if len(watch) == 0:
+        alert_message = "There no items in the watchlist."
+
+    return render(request, "auctions/watchlist.html", {
+        "watchlist": watch,
+        "alert_message": alert_message
+    })
+
+
+def categories(request):
+
+    categories = Category.objects.all()
+
+    alert_message = ""
+    if len(categories) == 0:
+        alert_message = "There no items in the watchlist."
+
+    return render(request, "auctions/categories.html", {
+        "categories": categories,
+        "alert_message": alert_message
+    })

@@ -1,0 +1,22 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-12"><h2>Categories</h5></div>
+        {% if alert_message %}
+            <div style="text-align: center" class="alert alert-warning"><h5 style="bg-alert">{{ alert_message }}</h5></div>        
+        {% endif %}
+    </div>  
+    <div class="row">
+        <div class="col-1"><p></p></div>
+        <div class="col-5"><p></p></div>
+        <div class="col-3"><p></p></div>          
+    </div>  
+    {% for c in categories %}
+        <div class="row">
+            <div class="col-1"><p></p></div>
+            <div class="col-5"><a href="{% url 'index' %}?c={{c.id_category}}">{{ c.name }}</a></div>
+            <div class="col-3"><p></p></div>         
+        </div>  
+    {% endfor %}
+{% endblock%}

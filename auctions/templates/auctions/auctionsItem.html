@@ -18,8 +18,8 @@
                 <div class="col-9"><p>{{ auction.description }}</p></div>            
             </div> 
             <div class="row">
-                <div class="col-3"><p>Start Bid</p></div>
-                <div class="col-9"><p>{{ auction.start_bid }}</p></div>            
+                <div class="col-3"><p>Amount Requested</p></div>
+                <div class="col-9"><p>{{ auction.start_bid }} {{higher_bid_message}}</p></div>            
             </div>
             <div class="row">
                 <div class="col-3"><p>Active</p></div>
@@ -30,25 +30,27 @@
                 <div class="col-9"><p>{{ auction.date_creation }}</p></div>            
             </div>      
             <div class="row">
-                <div class="col-3"><p>User</p></div>
+                <div class="col-3"><p>Created by</p></div>
                 <div class="col-9"><p>{{ user }}</p></div>            
             </div>                                                      
-            <div class="row">
-                <div class="col-3">
-                    <form action="{% url 'auctions_bid' %}" method="POST">
-                            {% csrf_token %}
-                            <label for="amount">Amount: </label>
-                            <input type="text" id="amount" pattern="([0-9]*\.[0-9]+|[0-9]+)" size="10" name="amount">
-                            <input type="hidden" id="id_auction" name="id_auction" value="{{ auction.id_auction }}">
-                            <input type="submit" value="Bid">
-                        </form>            
+            {% if auction.active %}
+                <div class="row">
+                    <div class="col-3">
+                        <form action="{% url 'auctions_bid' %}" method="POST">
+                                {% csrf_token %}
+                                <label for="amount">Amount: </label>
+                                <input type="text" id="amount" pattern="([0-9]*\.[0-9]+|[0-9]+)" size="10" name="amount">
+                                <input type="hidden" id="id_auction" name="id_auction" value="{{ auction.id_auction }}">
+                                <input type="submit" value="Bid">
+                            </form>            
+                    </div>
+                    <div class="col-9"><p></p></div>            
                 </div>
-                <div class="col-9"><p></p></div>            
-            </div>    
+            {% endif %} 
         </div>
         <hr>   
         <div>
-            {% if user.is_authenticated and auction.id_auction %}
+            {% if user.is_authenticated and auction.id_auction and auction.active %}
                 <ul class="nav">
                     {% if not watchlist %}
                         <li class="nav-item">
@@ -78,27 +80,31 @@
 {% endblock %}
 
 {% block comment %}
-    <hr>
-    <div class="row">
-        <div class="col-3">
-            <form action="{% url 'auctions_comment' %}" method="POST">
-                    {% csrf_token %}
-                    <label for="amount">Comments: </label>
-                    <input type="text" id="comment"  size="100" name="comment">
-                    <input type="hidden" id="id_auction" name="id_auction" value="{{ auction.id_auction }}">
-                    <input type="submit" value="Comment">
-                </form>            
+    {% if auction.active %}
+        <hr>
+        <div class="row">
+            <div class="col-3">
+                <form action="{% url 'auctions_comment' %}" method="POST">
+                        {% csrf_token %}
+                        <label for="amount">Comments: </label>
+                        <input type="text" id="comment"  size="100" name="comment">
+                        <input type="hidden" id="id_auction" name="id_auction" value="{{ auction.id_auction }}">
+                        <input type="submit" value="Comment">
+                    </form>            
+            </div>
+            <div class="col-9"><p></p></div>            
         </div>
-        <div class="col-9"><p></p></div>            
-    </div>    
-    <hr>
+        <hr>  
+    {% endif %}  
+
     <div class="row">
         <div class="col-12"><h5>Comments</h5></div>
     </div>  
     {% for comment in comments %}
         <div class="row">
-            <div class="col-3"><p>By {{ comment.id_user }}</p></div>
-            <div class="col-9"><p>{{ comment.comment }}</p></div>            
+            <div class="col-1"><p>By {{ comment.id_user }}</p></div>
+            <div class="col-2"><p>{{ comment.date_creation }}</p></div>
+            <div class="col-8"><p>{{ comment.comment }}</p></div>            
         </div>  
     {% endfor %}
 {% endblock %}
