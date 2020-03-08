@@ -8,7 +8,9 @@
         {% if alert_message %}
             <div style="text-align: center" class="alert alert-warning"><h5 style="bg-alert">{{ alert_message }}</h5></div>        
         {% endif %}
-        <div class="container-fluid">
+        <div class="container">
+        <div class="row">
+        <div class="col-9">
             <div class="row">
                 <div class="col-3"><p>Category</p></div>
                 <div class="col-9"><p>{{ category }}</p></div>            
@@ -32,7 +34,11 @@
             <div class="row">
                 <div class="col-3"><p>Created by</p></div>
                 <div class="col-9"><p>{{ user }}</p></div>            
-            </div>                                                      
+            </div> 
+        </div> 
+        <div class="col-3"><img src="{{ auction.image_url }}" height=200 width=200></div>
+
+        </div>                                                     
             {% if auction.active %}
                 <div class="row">
                     <div class="col-3">

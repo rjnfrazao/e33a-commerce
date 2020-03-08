@@ -13,11 +13,14 @@ def maxBid(id_auction):
         # Filter all bids from the auction
         search_max = Bid.objects.filter(id_auction=id_auction)
 
-        # Get the higher amount
-        max_amount = search_max.aggregate(
-            Max('amount'))
-
-        return max_amount["amount__max"]
+        if search_max.exists():
+            # Get the higher amount
+            max_amount = search_max.aggregate(
+                Max('amount'))
+            return max_amount["amount__max"]
+        else:
+            # Query set is empty. No bids yet, so returns 0.
+            return 0
     except:
         return 0
 

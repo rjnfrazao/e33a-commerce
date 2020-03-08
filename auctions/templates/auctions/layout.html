@@ -8,50 +8,55 @@
         <link href="{% static 'auctions/styles.css' %}" rel="stylesheet">
     </head>
     <body>
+    <div class="container my-2 bg-light text-white">
         <div>
-            <h1>Auctions</h1>
-            <div>
+            <h1 style="color:black">Auctions</h1>
+            <div style="color:black">
                 {% if user.is_authenticated %}
                     Signed in as <strong>{{ user.username }}</strong>.
                 {% else %}
                     Not signed in.
                 {% endif %}
             </div>
-            <ul class="nav">
+            <ul class="nav nav-pills">
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'index' %}">Active Listings</a>
+                    <a class="nav-link {% if menu == 'active' %}active{% endif %}" href="{% url 'index' %}">Active Listings</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'index' %}?q=closed">Closed Listings</a>
+                    <a class="nav-link {% if menu == 'close' %}active{% endif %}" href="{% url 'index' %}?q=closed">Closed Listings</a>
                 </li>   
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'categories' %}">Categories</a>
+                    <a class="nav-link {% if menu == 'cat' %}active{% endif %}" href="{% url 'categories' %}">Categories</a>
                 </li>                      
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'watchlist' %}">Watchlist</a>
+                        <a class="nav-link {% if menu == 'watch' %}active{% endif %}" href="{% url 'watchlist' %}">Watchlist</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'auctions_add' %}">New Auction</a>
+                        <a class="nav-link {% if menu == 'new' %}active{% endif %}" href="{% url 'auctions_add' %}">New Auction</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
+                        <a class="nav-link {% if menu == 'logout' %}active{% endif %}" href="{% url 'logout' %}">Log Out</a>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Log In</a>
+                        <a class="nav-link {% if menu == 'login' %}active{% endif %}" href="{% url 'login' %}">Log In</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register' %}">Register</a>
+                        <a class="nav-link {% if menu == 'register' %}active{% endif %}" href="{% url 'register' %}">Register</a>
                     </li>
                 {% endif %}
             </ul>
         </div>
+    </div>
+    <div class="container my-2">
         <hr>
+    </div>
+    <div class="container my-2 bg-dark text-white">
         {% block body %}
         {% endblock %}
         {% block comment %}
         {% endblock %}     
-
+    </div>
     </body>
 </html>
